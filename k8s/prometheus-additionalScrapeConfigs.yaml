@@ -1,0 +1,7 @@
+additionalScrapeConfigs:
+  - job_name: 'micrometer-app'
+    scrape_interval: 15s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - 'micrometer-app.app.svc.cluster.local:8080'
