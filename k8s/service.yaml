@@ -1,12 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: micrometer-app
+  name: sentiment-app
   namespace: app
+  labels:
+    app: sentiment-app        # ← ВАЖНО: совпадает с ServiceMonitor.spec.selector.matchLabels
 spec:
+  type: LoadBalancer
   selector:
-    app: micrometer-app
+    app: sentiment-app        # это как раньше: матчит Pod’ы
   ports:
-    - name: http
-      port: 8080
+    - name: http              # ← имя порта, по нему смотрит ServiceMonitor.endpoints.port
+      port: 80
       targetPort: 8080

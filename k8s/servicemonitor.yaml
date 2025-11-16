@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sentiment-app-sm
+  namespace: monitoring
+  labels:
+    release: prometheus           # важно: совпадает с именем релиза Helm (prometheus)
+spec:
+  selector:
+    matchLabels:
+      app: sentiment-app          # лейбл из Service
+  namespaceSelector:
+    matchNames:
+      - app                       # где живёт твой сервис
+  endpoints:
+    - port: http                  # имя порта из Service (service.yaml)
+      path: /actuator/prometheus
+      interval: 15s

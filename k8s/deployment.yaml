@@ -1,30 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: micrometer-app
+  name: sentiment-app
   namespace: app
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
-      app: micrometer-app
+      app: sentiment-app
   template:
     metadata:
       labels:
-        app: micrometer-app
+        app: sentiment-app
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
         prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
     spec:
       containers:
-        - name: app
-          image: micrometer-demo:0.1
+        - name: sentiment-app
+          image: sentiment-app:1.0
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
-          env:
-            - name: JAVA_TOOL_OPTIONS
-              value: "-XX:MaxRAMPercentage=70 -XX:+UseG1GC"
+            - name: http
+              containerPort: 8080
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -44,6 +43,6 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
-          securityContext:
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
+#          securityContext:
+#            runAsNonRoot: true
+#            readOnlyRootFilesystem: true
