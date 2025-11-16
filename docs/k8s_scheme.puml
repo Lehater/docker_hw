@@ -1,0 +1,83 @@
+@startuml
+!define RECTANGLE class
+!define SPRITE_K8S <&kubernetes>
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam ArrowColor #444444
+skinparam defaultTextAlignment center
+skinparam Rectangle {
+	BorderColor #333333
+	BackgroundColor #FFFFFF
+	FontColor #222222
+}
+skinparam package {
+	BorderColor #999999
+	BackgroundColor #F8F8F8
+}
+skinparam cloud {
+	BorderColor #666666
+	BackgroundColor #E8E8E8
+}
+
+title Архитектура решения: Sentiment Analysis в Minikube\n(Локальная разработка)
+
+sprite $k8s [16x16/4] {
+	0000000000000000
+	0FFFFFFFFFFFFF0
+	0F22222222222F0
+	0F22222222222F0
+	0F22222222222F0
+	0F22222222222F0
+	0FFFFFFFFFFFFF0
+	0000000000000000
+}
+
+' === Компоненты ===
+
+rectangle "Пользователь\n(curl, браузер, Postman)" as user #EFEFEF
+cloud "Docker Registry\n(локальный, Minikube)" as registry #E8E8E8
+
+package "Minikube Cluster" as cluster #DDEEFF {
+	rectangle "Ingress Controller\n(NGINX)" as ingress #BBDDFF {
+		[sentiment.local] as domain
+	}
+	rectangle "Service\nsentiment-service\nType: ClusterIP" as svc #CCEEFF
+	rectangle "Deployment\nsentiment-app\n3 реплики" as deploy #CEE7FF {
+		[Pod 1\nSpring Boot\n:8080] as pod1
+		[Pod 2\nSpring Boot\n:8080] as pod2
+		[Pod 3\nSpring Boot\n:8080] as pod3
+	}
+	rectangle "Horizontal Pod Autoscaler\n(HPA)\nCPU: 60%" as hpa #F0F0F0
+	package "Monitoring Stack" #FFF2CC {
+		rectangle "Prometheus\n/scrape → /actuator/prometheus" as prom #FFD700
+		rectangle "Grafana\nДашборды метрик" as graf #32CD32
+	}
+}
+
+' === Связи ===
+
+user -down-> ingress : HTTPS/HTTP\nsentiment.local/api/sentiment
+ingress -down-> svc : route /api/sentiment
+svc -down-> deploy : ClusterIP\nбалансировка
+deploy --> hpa : CPU usage > 60%\n→ scale up/down
+
+prom --> deploy : scrape metrics\n/actuator/prometheus
+graf --> prom : запрос метрик\n+ дашборды
+
+deploy <-- registry : docker pull\nsentiment-app:1.0
+
+note right of deploy
+  Spring Boot приложение:
+  - /api/sentiment (POST)
+  - Actuator + Prometheus
+  - Health, Metrics
+end note
+
+note bottom of ingress
+  В Minikube: minikube tunnel
+  или minikube ip + /etc/hosts
+  sentiment.local → <minikube-ip>
+end note
+
+@enduml
